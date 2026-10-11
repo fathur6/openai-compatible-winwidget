@@ -21,6 +21,8 @@ internal static class Program
         var window = new WidgetWindow(demo);
         if (args.Contains("--smoke"))
         {
+            // Capture the standard widget layout even on a short CI desktop.
+            window.Height = 748;
             window.ContentRendered += (_, _) => window.Dispatcher.BeginInvoke(DispatcherPriority.ApplicationIdle, new Action(() =>
             {
                 var bitmap = new RenderTargetBitmap((int)window.ActualWidth, (int)window.ActualHeight, 96, 96, PixelFormats.Pbgra32);

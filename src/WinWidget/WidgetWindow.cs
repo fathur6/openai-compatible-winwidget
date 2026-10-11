@@ -48,7 +48,7 @@ public sealed partial class WidgetWindow : Window
         Topmost = true; ShowInTaskbar = false;
         FontFamily = new FontFamily("Segoe UI");
         Left = Math.Max(0, SystemParameters.WorkArea.Right - Width - 24);
-        Top = SystemParameters.WorkArea.Top + 40;
+        Top = Math.Min(SystemParameters.WorkArea.Top + 40, SystemParameters.WorkArea.Bottom - Height);
         LoadPosition();
         var shell = new Border { Background = Brush("#12151C"), BorderBrush = Brush("#313743"), BorderThickness = new Thickness(1), CornerRadius = new CornerRadius(18), Padding = new Thickness(20) };
         Content = shell;
@@ -131,14 +131,6 @@ public sealed partial class WidgetWindow : Window
     {
         var button = new Button { Content = text, Foreground = Brush("#DCE1EA"), Background = Brush("#232833"), BorderThickness = new Thickness(0), Padding = new Thickness(12, 7, 12, 7), Margin = new Thickness(0, 0, 7, 0), Cursor = Cursors.Hand };
         button.Click += action; return button;
-    }
-    private static Border Card(string title, string value, string note, string accent)
-    {
-        var stack = new StackPanel();
-        stack.Children.Add(Label(title, 10, accent, FontWeights.SemiBold));
-        stack.Children.Add(Label(value, 30, "#F1F3F7", FontWeights.SemiBold));
-        stack.Children.Add(Label(note, 11, "#A4ACBA"));
-        return new Border { Child = stack, Background = Brush("#1B2029"), CornerRadius = new CornerRadius(12), Padding = new Thickness(16), Margin = new Thickness(0, 0, 0, 10) };
     }
     private void LoadPosition()
     {

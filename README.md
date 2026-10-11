@@ -10,6 +10,8 @@ Get the Windows x64 ZIP from [Releases](https://github.com/fathur6/openai-compat
 
 Drag the title to move the widget. **Pinned** keeps it above other windows. **Hide** sends it to the tray; double-click the tray icon to restore it, or right-click for Show, Settings and Quit. Position and pin preference survive restarts. Startup is manual in this release.
 
+On shorter displays the content scrolls so the footer controls remain available. The release preview captures the standard 748-pixel layout using sample values.
+
 In **Settings**, enter DeepSeek/MiniMax API keys or point to OpenCode's existing `auth.json`. Saved keys are protected with Windows DPAPI for your current account. Blank key fields preserve saved keys; clear checkboxes remove saved keys. Removing a saved key enables the OpenCode-file fallback again. Card visibility does not stop refreshes or history collection.
 
 For Codex, use an existing Codex OAuth sign-in and select its `auth.json` path. The default respects `CODEX_HOME`, falling back to `%USERPROFILE%\.codex\auth.json`. The widget reads the access token and account ID in memory; it does not copy the token into its settings or renew the session. An API-only login cannot supply subscription quota. Sign in again in Codex when authentication expires.

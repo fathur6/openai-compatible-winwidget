@@ -9,4 +9,6 @@ Always-visible Windows desktop widget for DeepSeek and MiniMax balances and Code
 
 Download the ZIP, extract it and open WinWidget.exe. No separate .NET installation is required.
 
-This initial build is unsigned. Application Control on the development PC blocked runtime preview of the provider assembly; compiler verification and GitHub Windows CI results are recorded separately. Live provider credentials are not used in CI. Internal provider endpoints may change. Input-token charts, emailed monthly reports and arbitrary custom endpoints are not part of this release.
+The Release build, all 17 behavior checks, native sample-data rendering and portable packaging passed on the GitHub Windows runner. Live provider credentials are not used in CI.
+
+This initial build is unsigned. Application Control intermittently blocked freshly built assemblies on the development PC. No security protections were changed. Internal provider endpoints may change. Input-token charts, emailed monthly reports and arbitrary custom endpoints are not part of this release.

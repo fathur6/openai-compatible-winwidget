@@ -1,5 +1,11 @@
 # Changelog
 
+## Iteration 5 · Release readiness
+
+- GitHub Windows CI passed compilation, all 17 checks, native preview and portable packaging.
+- Kept the initial window inside the work area on shorter displays.
+- Bounded CI execution and documented verification and release limitations.
+
 ## Iteration 4 · Layout and verification
 
 - Compacted cards and quota rows to leave room for chart labels and the legend.
