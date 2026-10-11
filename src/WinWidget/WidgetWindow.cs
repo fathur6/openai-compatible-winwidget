@@ -6,6 +6,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Media;
 using Forms = System.Windows.Forms;
+using WinWidget.Core;
 
 namespace WinWidget;
 
@@ -18,13 +19,23 @@ public sealed partial class WidgetWindow : Window
     private readonly Button pin;
     private readonly string statePath;
     private bool loading = true;
+    private readonly LocalStore store = new();
+    private readonly ProviderClient client = new();
+    private Preferences preferences;
+    private Snapshot snapshot;
+    private bool refreshing;
+    private readonly System.Threading.CancellationTokenSource cancellation = new();
+    private readonly System.Windows.Threading.DispatcherTimer refreshTimer = new() { Interval = TimeSpan.FromMinutes(15) };
+    private readonly System.Windows.Threading.DispatcherTimer minuteTimer = new() { Interval = TimeSpan.FromMinutes(1) };
 
     public WidgetWindow(bool demo)
     {
         this.demo = demo;
+        preferences = demo ? new() : store.LoadPreferences();
+        snapshot = demo ? Snapshot.Demo : store.LoadCache();
         statePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "WinWidget", "window.json");
         Title = "AI Usage · WinWidget";
-        Width = 360; Height = 640;
+        Width = 368; Height = Math.Min(748, SystemParameters.WorkArea.Height - 24);
         WindowStyle = WindowStyle.None; ResizeMode = ResizeMode.NoResize;
         AllowsTransparency = true; Background = Brushes.Transparent;
         Topmost = true; ShowInTaskbar = false;
@@ -43,7 +54,7 @@ public sealed partial class WidgetWindow : Window
         title.Children.Add(Label(demo ? "Desktop companion · demo" : "Desktop companion", 11, "#858B97"));
         title.MouseLeftButtonDown += (_, e) => { if (e.ButtonState == MouseButtonState.Pressed) DragMove(); };
         header.Children.Add(title);
-        pin = Button("Pinned", (_, _) => { Topmost = !Topmost; pin!.Content = Topmost ? "Pinned" : "Pin"; SavePosition(); });
+        pin = Button(Topmost ? "Pinned" : "Pin", (_, _) => { Topmost = !Topmost; pin!.Content = Topmost ? "Pinned" : "Pin"; SavePosition(); });
         Grid.SetColumn(pin, 1); header.Children.Add(pin);
         DockPanel.SetDock(header, Dock.Top); layout.Children.Add(header);
         var footer = new StackPanel();
@@ -53,7 +64,7 @@ public sealed partial class WidgetWindow : Window
         actions.Children.Add(Button("Hide", (_, _) => Hide()));
         footer.Children.Add(actions); footer.Children.Add(status);
         DockPanel.SetDock(footer, Dock.Bottom); layout.Children.Add(footer);
-        layout.Children.Add(body);
+        layout.Children.Add(new ScrollViewer { Content = body, VerticalScrollBarVisibility = ScrollBarVisibility.Auto, HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled });
         tray = new Forms.NotifyIcon { Icon = System.Drawing.SystemIcons.Application, Text = "AI Usage · WinWidget", Visible = !demo };
         tray.DoubleClick += (_, _) => { Show(); Activate(); };
         var menu = new Forms.ContextMenuStrip();
@@ -63,18 +74,47 @@ public sealed partial class WidgetWindow : Window
         LocationChanged += (_, _) => { if (!loading) SavePosition(); };
         Closed += (_, _) => { SavePosition(); tray.Dispose(); StopRefresh(); };
         loading = false;
-        RenderInitial();
+        RenderSnapshot();
         Loaded += async (_, _) => { await RefreshAsync(); StartRefresh(); };
     }
 
-    private void RenderInitial()
+    private void RenderSnapshot()
     {
         body.Children.Clear();
-        body.Children.Add(Card("DEEPSEEK", demo ? "$24.80" : "—", "API balance · USD", "#74B4FF"));
-        body.Children.Add(Card("MINIMAX", demo ? "$18.60" : "—", "API credit · USD", "#C5A2FF"));
-        body.Children.Add(Card("CODEX", demo ? "82%" : "—", "Subscription quota", "#86DFC0"));
-        body.Children.Add(Label("REMAINING HISTORY", 10, "#858B97", FontWeights.SemiBold));
-        body.Children.Add(Label("Snapshots will appear after refresh.", 12, "#A4ACBA"));
+        if (preferences.ShowDeepSeek) body.Children.Add(BalanceCard("DEEPSEEK", snapshot.DeepSeek, "#74B4FF"));
+        if (preferences.ShowMiniMax) body.Children.Add(BalanceCard("MINIMAX", snapshot.MiniMax, "#C5A2FF"));
+        if (preferences.ShowCodex)
+        {
+            var quota = new StackPanel();
+            quota.Children.Add(Label("CODEX SUBSCRIPTION", 10, "#86DFC0", FontWeights.SemiBold));
+            quota.Children.Add(QuotaRow("5 hour", snapshot.Codex.FiveHour));
+            quota.Children.Add(QuotaRow("Weekly", snapshot.Codex.Weekly));
+            if (snapshot.Codex.Error != null) quota.Children.Add(Label(snapshot.Codex.Error, 10, "#DEBC84"));
+            body.Children.Add(Panel(quota));
+        }
+        RenderHistory();
+    }
+
+    private static Border BalanceCard(string name, ProviderResult result, string accent)
+    {
+        var stack = new StackPanel();
+        stack.Children.Add(Label(name, 10, accent, FontWeights.SemiBold));
+        stack.Children.Add(Label(result.Reading == null ? "—" : result.Reading.Value.ToString("C2", System.Globalization.CultureInfo.GetCultureInfo("en-US")), 30, "#F1F3F7", FontWeights.SemiBold));
+        stack.Children.Add(Label(result.Error ?? "Available balance · USD", 11, result.Error == null ? "#A4ACBA" : "#DEBC84"));
+        if (result.Reading != null) stack.Children.Add(Label($"{(result.Error != null ? "Cached · " : "Updated · ")}{result.Reading.ObservedAt.ToLocalTime():MMM d, h:mm tt}", 10, "#858B97"));
+        return Panel(stack);
+    }
+    private static Border Panel(UIElement content) => new() { Child = content, Background = Brush("#1B2029"), CornerRadius = new CornerRadius(12), Padding = new Thickness(16), Margin = new Thickness(0, 0, 0, 10) };
+    private static StackPanel QuotaRow(string name, Reading? reading)
+    {
+        var row = new StackPanel { Margin = new Thickness(0, 6, 0, 4) };
+        row.Children.Add(Label($"{name}    {(reading == null ? "—" : $"{reading.Value:0}% remaining")}", 13, "#E1E6EE", FontWeights.SemiBold));
+        row.Children.Add(new ProgressBar { Value = reading?.Value ?? 0, Maximum = 100, Height = 5, Background = Brush("#353D48"), Foreground = Brush("#86DFC0"), BorderThickness = new Thickness(0), Margin = new Thickness(0, 3, 0, 7) });
+        var text = reading?.ResetAt is DateTimeOffset reset ? $"Resets {reset.ToLocalTime():MMM d, h:mm tt}" : "Reset time unavailable";
+        if (reading?.ResetAt <= DateTimeOffset.UtcNow) text = "Reset time passed · refresh pending";
+        row.Children.Add(Label(text, 10, "#A4ACBA"));
+        if (reading != null) row.Children.Add(Label($"Observed {reading.ObservedAt.ToLocalTime():MMM d, h:mm tt}", 9, "#858B97"));
+        return row;
     }
 
     internal static SolidColorBrush Brush(string value) => new((Color)ColorConverter.ConvertFromString(value));
@@ -115,8 +155,39 @@ public sealed partial class WidgetWindow : Window
         catch (Exception e) when (e is IOException or UnauthorizedAccessException) { status.Text = "Window position could not be saved."; }
     }
     private record WindowStateData(double Left, double Top, bool Pinned);
-    private System.Threading.Tasks.Task RefreshAsync() { status.Text = demo ? "Demo · sample values" : "Configure providers in Settings"; return System.Threading.Tasks.Task.CompletedTask; }
-    private void OpenSettings() => MessageBox.Show(this, "Provider settings arrive in iteration 2.", "WinWidget");
-    private void StartRefresh() { }
-    private void StopRefresh() { }
+    private async System.Threading.Tasks.Task RefreshAsync()
+    {
+        if (refreshing) return;
+        if (demo) { status.Text = "Demo · sample values · no network requests"; return; }
+        refreshing = true; status.Text = "Refreshing providers…";
+        try
+        {
+            snapshot = await client.RefreshAsync(preferences, store.LoadSecrets(), snapshot, cancellation.Token);
+            store.SaveCache(snapshot);
+            SaveHistory();
+            RenderSnapshot();
+            status.Text = $"Checked {DateTime.Now:h:mm tt} · auto-refresh 15 min";
+        }
+        catch (Exception e) when (e is IOException or UnauthorizedAccessException) { status.Text = "Local data could not be saved."; RenderSnapshot(); }
+        finally { refreshing = false; }
+    }
+    private void OpenSettings()
+    {
+        if (demo) { MessageBox.Show(this, "Demo mode uses sample data. Launch normally to configure providers.", "WinWidget"); return; }
+        var settings = new SettingsWindow(store) { Owner = this };
+        if (settings.ShowDialog() == true) { preferences = store.LoadPreferences(); RenderSnapshot(); _ = RefreshAsync(); }
+    }
+    private void StartRefresh()
+    {
+        if (demo) return;
+        refreshTimer.Tick += async (_, _) => await RefreshAsync(); refreshTimer.Start();
+        minuteTimer.Tick += (_, _) => RenderSnapshot(); minuteTimer.Start();
+    }
+    private void StopRefresh() { refreshTimer.Stop(); minuteTimer.Stop(); cancellation.Cancel(); client.Dispose(); }
+    private void RenderHistory()
+    {
+        body.Children.Add(Label("REMAINING HISTORY", 10, "#858B97", FontWeights.SemiBold));
+        body.Children.Add(Label("Hourly history arrives in iteration 3.", 12, "#A4ACBA"));
+    }
+    private void SaveHistory() { }
 }
