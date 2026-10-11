@@ -27,12 +27,19 @@ public sealed partial class WidgetWindow : Window
     private readonly System.Threading.CancellationTokenSource cancellation = new();
     private readonly System.Windows.Threading.DispatcherTimer refreshTimer = new() { Interval = TimeSpan.FromMinutes(15) };
     private readonly System.Windows.Threading.DispatcherTimer minuteTimer = new() { Interval = TimeSpan.FromMinutes(1) };
+    private HistoryStore? history;
+    private System.Collections.Generic.IReadOnlyList<HistoryPoint> historyPoints = Array.Empty<HistoryPoint>();
+    private DateTimeOffset chartEnd = DateTimeOffset.FromUnixTimeSeconds(DateTimeOffset.UtcNow.ToUnixTimeSeconds() / 3600 * 3600);
+    private int chartDayOffset;
 
     public WidgetWindow(bool demo)
     {
         this.demo = demo;
         preferences = demo ? new() : store.LoadPreferences();
         snapshot = demo ? Snapshot.Demo : store.LoadCache();
+        try { if (!demo) history = new HistoryStore(store.Root); }
+        catch (Exception e) when (e is Microsoft.Data.Sqlite.SqliteException or IOException or UnauthorizedAccessException) { status.Text = "History storage unavailable."; }
+        LoadHistory();
         statePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "WinWidget", "window.json");
         Title = "AI Usage · WinWidget";
         Width = 368; Height = Math.Min(748, SystemParameters.WorkArea.Height - 24);
@@ -186,8 +193,32 @@ public sealed partial class WidgetWindow : Window
     private void StopRefresh() { refreshTimer.Stop(); minuteTimer.Stop(); cancellation.Cancel(); client.Dispose(); }
     private void RenderHistory()
     {
-        body.Children.Add(Label("REMAINING HISTORY", 10, "#858B97", FontWeights.SemiBold));
-        body.Children.Add(Label("Hourly history arrives in iteration 3.", 12, "#A4ACBA"));
+        var heading = new StackPanel { Orientation = Orientation.Horizontal };
+        heading.Children.Add(Label("REMAINING · 7 DAYS", 10, "#858B97", FontWeights.SemiBold));
+        var older = Button("‹", (_, _) => { if (chartDayOffset > -358) { chartDayOffset--; LoadHistory(); RenderSnapshot(); } }); older.Padding = new Thickness(8, 0, 8, 0); older.Margin = new Thickness(12, 0, 4, 0); heading.Children.Add(older);
+        var newer = Button("›", (_, _) => { if (chartDayOffset < 0) { chartDayOffset++; LoadHistory(); RenderSnapshot(); } }); newer.Padding = new Thickness(8, 0, 8, 0); newer.IsEnabled = chartDayOffset < 0; heading.Children.Add(newer);
+        body.Children.Add(heading);
+        body.Children.Add(new HistoryChart { Points = historyPoints, End = chartEnd, ShowDeepSeek = preferences.ShowDeepSeek, ShowCodex = preferences.ShowCodex });
+        var legend = new StackPanel { Orientation = Orientation.Horizontal };
+        if (preferences.ShowDeepSeek) legend.Children.Add(Label("DeepSeek USD   ", 10, "#74B4FF"));
+        if (preferences.ShowCodex) legend.Children.Add(Label("Codex weekly %", 10, "#86DFC0"));
+        body.Children.Add(legend);
     }
-    private void SaveHistory() { }
+    private void LoadHistory()
+    {
+        chartEnd = DateTimeOffset.FromUnixTimeSeconds(DateTimeOffset.UtcNow.ToUnixTimeSeconds() / 3600 * 3600).AddDays(chartDayOffset);
+        if (demo)
+        {
+            var samples = new System.Collections.Generic.List<HistoryPoint>();
+            for (int i = 0; i < 168; i++) samples.Add(new(chartEnd.AddHours(i - 167), 28 - i * 0.019 + Math.Sin(i / 12.0) * 0.2, 18.6, 82, 96 - i * 0.19));
+            historyPoints = samples; return;
+        }
+        try { historyPoints = history?.Read(chartEnd) ?? Array.Empty<HistoryPoint>(); }
+        catch (Exception e) when (e is Microsoft.Data.Sqlite.SqliteException or IOException) { historyPoints = Array.Empty<HistoryPoint>(); status.Text = "History could not be read."; }
+    }
+    private void SaveHistory()
+    {
+        try { history?.Save(snapshot, DateTimeOffset.UtcNow); LoadHistory(); }
+        catch (Exception e) when (e is Microsoft.Data.Sqlite.SqliteException or IOException) { status.Text = "History could not be saved."; }
+    }
 }

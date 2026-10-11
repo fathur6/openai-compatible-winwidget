@@ -1,5 +1,14 @@
 # Changelog
 
+## Iteration 3 · History and distribution
+
+- Hourly SQLite ledger with 12-month retention and additive updates.
+- Seven-day dual-axis chart with one-day navigation and gaps for unavailable observations.
+- Portable x64 packaging, Windows CI, sample preview and tagged release workflow.
+- Fixture-based checks cover quota parsing, provider isolation, encrypted storage and ledger behavior.
+- Updated SQLite packages after NuGet identified a vulnerable native dependency.
+- Local compilation passes; the local application-control runtime restriction is documented.
+
 ## Iteration 2 · Provider integration
 
 - DeepSeek USD balance, MiniMax USD credit and Codex 5-hour/weekly quota.
