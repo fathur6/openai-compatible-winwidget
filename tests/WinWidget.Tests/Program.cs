@@ -4,7 +4,7 @@ using WinWidget.Core;
 
 int checks = 0;
 void Check(bool condition, string message) { if (!condition) throw new Exception(message); checks++; }
-var now = DateTimeOffset.UtcNow;
+var now = DateTimeOffset.FromUnixTimeSeconds(DateTimeOffset.UtcNow.ToUnixTimeSeconds() / 3600 * 3600).AddMinutes(15);
 using (var json = JsonDocument.Parse("""{"rate_limit":{"primary_window":{"limit_window_seconds":604800,"used_percent":36,"reset_at":2000000000},"secondary_window":{"limit_window_seconds":18000,"used_percent":18,"reset_at":1900000000}}}"""))
 {
     var quota = ProviderClient.ParseQuota(json.RootElement, now);

@@ -1,5 +1,12 @@
 # Changelog
 
+## Iteration 4 · Layout and verification
+
+- Compacted cards and quota rows to leave room for chart labels and the legend.
+- Preserved history-storage failures in the footer instead of overwriting them with a success message.
+- All 17 local behavior checks pass and Release compilation has zero warnings/errors.
+- Native demo rendering passed for iteration 3. Application Control intermittently blocks freshly rebuilt assemblies; final preview also runs in Windows CI.
+
 ## Iteration 3 · History and distribution
 
 - Hourly SQLite ledger with 12-month retention and additive updates.

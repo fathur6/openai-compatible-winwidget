@@ -106,15 +106,15 @@ public sealed partial class WidgetWindow : Window
     {
         var stack = new StackPanel();
         stack.Children.Add(Label(name, 10, accent, FontWeights.SemiBold));
-        stack.Children.Add(Label(result.Reading == null ? "—" : result.Reading.Value.ToString("C2", System.Globalization.CultureInfo.GetCultureInfo("en-US")), 30, "#F1F3F7", FontWeights.SemiBold));
+        stack.Children.Add(Label(result.Reading == null ? "—" : result.Reading.Value.ToString("C2", System.Globalization.CultureInfo.GetCultureInfo("en-US")), 28, "#F1F3F7", FontWeights.SemiBold));
         stack.Children.Add(Label(result.Error ?? "Available balance · USD", 11, result.Error == null ? "#A4ACBA" : "#DEBC84"));
         if (result.Reading != null) stack.Children.Add(Label($"{(result.Error != null ? "Cached · " : "Updated · ")}{result.Reading.ObservedAt.ToLocalTime():MMM d, h:mm tt}", 10, "#858B97"));
         return Panel(stack);
     }
-    private static Border Panel(UIElement content) => new() { Child = content, Background = Brush("#1B2029"), CornerRadius = new CornerRadius(12), Padding = new Thickness(16), Margin = new Thickness(0, 0, 0, 10) };
+    private static Border Panel(UIElement content) => new() { Child = content, Background = Brush("#1B2029"), CornerRadius = new CornerRadius(12), Padding = new Thickness(12), Margin = new Thickness(0, 0, 0, 10) };
     private static StackPanel QuotaRow(string name, Reading? reading)
     {
-        var row = new StackPanel { Margin = new Thickness(0, 6, 0, 4) };
+        var row = new StackPanel { Margin = new Thickness(0, 3, 0, 2) };
         row.Children.Add(Label($"{name}    {(reading == null ? "—" : $"{reading.Value:0}% remaining")}", 13, "#E1E6EE", FontWeights.SemiBold));
         row.Children.Add(new ProgressBar { Value = reading?.Value ?? 0, Maximum = 100, Height = 5, Background = Brush("#353D48"), Foreground = Brush("#86DFC0"), BorderThickness = new Thickness(0), Margin = new Thickness(0, 3, 0, 7) });
         var text = reading?.ResetAt is DateTimeOffset reset ? $"Resets {reset.ToLocalTime():MMM d, h:mm tt}" : "Reset time unavailable";
@@ -126,7 +126,7 @@ public sealed partial class WidgetWindow : Window
 
     internal static SolidColorBrush Brush(string value) => new((Color)ColorConverter.ConvertFromString(value));
     internal static TextBlock Label(string value, double size = 13, string color = "#F1F3F7", FontWeight? weight = null) => new()
-    { Text = value, FontSize = size, Foreground = Brush(color), FontWeight = weight ?? FontWeights.Normal, Margin = new Thickness(0, 0, 0, 5), TextWrapping = TextWrapping.Wrap };
+    { Text = value, FontSize = size, Foreground = Brush(color), FontWeight = weight ?? FontWeights.Normal, Margin = new Thickness(0, 0, 0, 3), TextWrapping = TextWrapping.Wrap };
     internal static Button Button(string text, RoutedEventHandler action)
     {
         var button = new Button { Content = text, Foreground = Brush("#DCE1EA"), Background = Brush("#232833"), BorderThickness = new Thickness(0), Padding = new Thickness(12, 7, 12, 7), Margin = new Thickness(0, 0, 7, 0), Cursor = Cursors.Hand };
@@ -171,9 +171,9 @@ public sealed partial class WidgetWindow : Window
         {
             snapshot = await client.RefreshAsync(preferences, store.LoadSecrets(), snapshot, cancellation.Token);
             store.SaveCache(snapshot);
-            SaveHistory();
+            bool historySaved = SaveHistory();
             RenderSnapshot();
-            status.Text = $"Checked {DateTime.Now:h:mm tt} · auto-refresh 15 min";
+            status.Text = historySaved ? $"Checked {DateTime.Now:h:mm tt} · auto-refresh 15 min" : "Providers checked · history storage unavailable";
         }
         catch (Exception e) when (e is IOException or UnauthorizedAccessException) { status.Text = "Local data could not be saved."; RenderSnapshot(); }
         finally { refreshing = false; }
@@ -216,9 +216,10 @@ public sealed partial class WidgetWindow : Window
         try { historyPoints = history?.Read(chartEnd) ?? Array.Empty<HistoryPoint>(); }
         catch (Exception e) when (e is Microsoft.Data.Sqlite.SqliteException or IOException) { historyPoints = Array.Empty<HistoryPoint>(); status.Text = "History could not be read."; }
     }
-    private void SaveHistory()
+    private bool SaveHistory()
     {
-        try { history?.Save(snapshot, DateTimeOffset.UtcNow); LoadHistory(); }
-        catch (Exception e) when (e is Microsoft.Data.Sqlite.SqliteException or IOException) { status.Text = "History could not be saved."; }
+        if (history == null) return false;
+        try { history.Save(snapshot, DateTimeOffset.UtcNow); LoadHistory(); return true; }
+        catch (Exception e) when (e is Microsoft.Data.Sqlite.SqliteException or IOException) { return false; }
     }
 }
