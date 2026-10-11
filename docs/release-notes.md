@@ -11,4 +11,4 @@ Download the ZIP, extract it and open WinWidget.exe. No separate .NET installati
 
 The Release build, all 17 behavior checks, native sample-data rendering and portable packaging passed on the GitHub Windows runner. Live provider credentials are not used in CI.
 
-This initial build is unsigned. Application Control intermittently blocked freshly built assemblies on the development PC. No security protections were changed. Internal provider endpoints may change. Input-token charts, emailed monthly reports and arbitrary custom endpoints are not part of this release.
+This initial build is unsigned. Application Control intermittently blocked freshly built assemblies and blocked the portable EXE on the development PC. Trusted code signing is needed to run it under that PC's policy. No security protections were changed. Internal provider endpoints may change. Input-token charts, emailed monthly reports and arbitrary custom endpoints are not part of this release.

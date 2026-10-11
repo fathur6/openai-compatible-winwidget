@@ -4,6 +4,8 @@ An always-visible Windows desktop companion for DeepSeek and MiniMax balances an
 
 Built with C# and WPF on .NET 10. Development is recorded as successive commits and milestone tags in this public repository. Credentials and personal usage data stay on the local machine.
 
+![Sample-data preview](https://github.com/fathur6/openai-compatible-winwidget/releases/download/v0.3.1/widget-preview.png)
+
 ## Download and use
 
 Get the Windows x64 ZIP from [Releases](https://github.com/fathur6/openai-compatible-winwidget/releases), extract it, and open **WinWidget.exe**. The portable package includes .NET. Windows 11 x64 is the primary target; compatible Windows 10 LTSC/Enterprise editions may also work but have not been tested.
@@ -40,7 +42,7 @@ dotnet run --project tests/WinWidget.Tests -c Release
 
 Demo and smoke modes use sample values and make no provider requests. CI checks quota classification, malformed/partial responses, independent provider failure handling, stale-cache preservation, DPAPI storage, hourly upserts and retention. CI does not use real provider credentials.
 
-The initial release is unsigned. Windows Application Control blocked a provider assembly during development-PC runtime preview; do not disable that protection to run the app. Build results and remote CI verification are reported independently. Production signing requires an appropriate signing certificate.
+The initial release is unsigned. Windows Application Control intermittently blocked newly built assemblies and blocked the portable EXE on the development PC. Trusted code signing is needed to run it under this PC's policy; do not disable that protection. Build results and remote CI verification are reported independently. Production signing requires an appropriate signing certificate.
 
 ## Scope and provider endpoints
 

@@ -1,5 +1,12 @@
 # Changelog
 
+## Iteration 6 · v0.3.1 visual polish
+
+- Reduced card padding and chart whitespace so the full legend fits the standard layout.
+- Added the release sample-data preview to the README.
+- Documented the development PC's confirmed portable-EXE Application Control block.
+- Preserved v0.3.0 and its iteration tags; the visual correction ships as v0.3.1.
+
 ## Iteration 5 · Release readiness
 
 - GitHub Windows CI passed compilation, all 17 checks, native preview and portable packaging.

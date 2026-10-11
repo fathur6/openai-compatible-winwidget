@@ -14,7 +14,7 @@ public sealed class HistoryChart : FrameworkElement
     public DateTimeOffset End { get; init; }
     public bool ShowDeepSeek { get; init; } = true;
     public bool ShowCodex { get; init; } = true;
-    public HistoryChart() { Height = 104; Margin = new Thickness(0, 8, 0, 0); }
+    public HistoryChart() { Height = 92; Margin = new Thickness(0, 8, 0, 0); }
     protected override void OnRender(DrawingContext dc)
     {
         base.OnRender(dc);

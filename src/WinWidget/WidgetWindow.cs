@@ -111,7 +111,7 @@ public sealed partial class WidgetWindow : Window
         if (result.Reading != null) stack.Children.Add(Label($"{(result.Error != null ? "Cached · " : "Updated · ")}{result.Reading.ObservedAt.ToLocalTime():MMM d, h:mm tt}", 10, "#858B97"));
         return Panel(stack);
     }
-    private static Border Panel(UIElement content) => new() { Child = content, Background = Brush("#1B2029"), CornerRadius = new CornerRadius(12), Padding = new Thickness(12), Margin = new Thickness(0, 0, 0, 10) };
+    private static Border Panel(UIElement content) => new() { Child = content, Background = Brush("#1B2029"), CornerRadius = new CornerRadius(12), Padding = new Thickness(10), Margin = new Thickness(0, 0, 0, 10) };
     private static StackPanel QuotaRow(string name, Reading? reading)
     {
         var row = new StackPanel { Margin = new Thickness(0, 3, 0, 2) };
@@ -126,7 +126,7 @@ public sealed partial class WidgetWindow : Window
 
     internal static SolidColorBrush Brush(string value) => new((Color)ColorConverter.ConvertFromString(value));
     internal static TextBlock Label(string value, double size = 13, string color = "#F1F3F7", FontWeight? weight = null) => new()
-    { Text = value, FontSize = size, Foreground = Brush(color), FontWeight = weight ?? FontWeights.Normal, Margin = new Thickness(0, 0, 0, 3), TextWrapping = TextWrapping.Wrap };
+    { Text = value, FontSize = size, Foreground = Brush(color), FontWeight = weight ?? FontWeights.Normal, Margin = new Thickness(0, 0, 0, 2), TextWrapping = TextWrapping.Wrap };
     internal static Button Button(string text, RoutedEventHandler action)
     {
         var button = new Button { Content = text, Foreground = Brush("#DCE1EA"), Background = Brush("#232833"), BorderThickness = new Thickness(0), Padding = new Thickness(12, 7, 12, 7), Margin = new Thickness(0, 0, 7, 0), Cursor = Cursors.Hand };
