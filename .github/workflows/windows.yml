@@ -22,6 +22,9 @@ jobs:
       - name: Build, verify and package
         shell: pwsh
         run: ./scripts/build.ps1
+      - name: Verify signature-gate rejection
+        shell: pwsh
+        run: ./tests/signing-checks.ps1 -UnsignedAssembly src/WinWidget/bin/Release/net10.0-windows/WinWidget.dll
       - name: Render demo preview
         shell: pwsh
         run: |

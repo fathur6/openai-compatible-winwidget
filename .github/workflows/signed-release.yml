@@ -1,0 +1,64 @@
+name: Signed Windows package
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  sign:
+    runs-on: windows-latest
+    timeout-minutes: 25
+    environment: signing
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/checkout@v4
+      - name: Check signing configuration
+        shell: pwsh
+        env:
+          CLIENT_ID: ${{ vars.SIGNING_AZURE_CLIENT_ID }}
+          TENANT_ID: ${{ vars.SIGNING_AZURE_TENANT_ID }}
+          SUBSCRIPTION_ID: ${{ vars.SIGNING_AZURE_SUBSCRIPTION_ID }}
+          ENDPOINT: ${{ vars.SIGNING_ENDPOINT }}
+          ACCOUNT: ${{ vars.SIGNING_ACCOUNT }}
+          PROFILE: ${{ vars.SIGNING_PROFILE }}
+        run: |
+          foreach ($name in 'CLIENT_ID','TENANT_ID','SUBSCRIPTION_ID','ENDPOINT','ACCOUNT','PROFILE') {
+            if (![Environment]::GetEnvironmentVariable($name)) { throw "Missing signing configuration: $name. See docs/signing.md." }
+          }
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Build and verify directory package
+        shell: pwsh
+        run: ./scripts/build.ps1 -DirectoryBundle -SkipPackage
+      - name: Find files needing signatures
+        id: files
+        shell: pwsh
+        run: |
+          $files = @(Get-ChildItem artifacts/win-x64-signing -File -Recurse | Where-Object { $_.Extension -in '.exe','.dll' } | Where-Object { $signature = Get-AuthenticodeSignature -LiteralPath $_.FullName; $signature.Status -ne 'Valid' -or !$signature.TimeStamperCertificate })
+          if ($files.Count -eq 0) { throw 'No new binaries to sign.' }
+          "list=$($files.FullName -join ',')" >> $env:GITHUB_OUTPUT
+      - uses: azure/login@v2
+        with:
+          client-id: ${{ vars.SIGNING_AZURE_CLIENT_ID }}
+          tenant-id: ${{ vars.SIGNING_AZURE_TENANT_ID }}
+          subscription-id: ${{ vars.SIGNING_AZURE_SUBSCRIPTION_ID }}
+      - uses: azure/artifact-signing-action@v2
+        with:
+          endpoint: ${{ vars.SIGNING_ENDPOINT }}
+          signing-account-name: ${{ vars.SIGNING_ACCOUNT }}
+          certificate-profile-name: ${{ vars.SIGNING_PROFILE }}
+          files: ${{ steps.files.outputs.list }}
+          file-digest: SHA256
+          timestamp-digest: SHA256
+          timestamp-rfc3161: http://timestamp.acs.microsoft.com
+      - name: Verify all signatures and package
+        shell: pwsh
+        run: |
+          ./scripts/verify-signatures.ps1 -PublishDirectory artifacts/win-x64-signing
+          Compress-Archive artifacts/win-x64-signing/* artifacts/WinWidget-win-x64-signed.zip -Force
+      - uses: actions/upload-artifact@v4
+        with:
+          name: WinWidget-signed-windows-x64
+          path: artifacts/WinWidget-win-x64-signed.zip

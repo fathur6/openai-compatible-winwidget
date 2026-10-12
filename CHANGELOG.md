@@ -1,5 +1,12 @@
 # Changelog
 
+## Iteration 7 · Trusted signing preparation
+
+- Added CA-issued local certificate signing and timestamp/signature verification for every EXE/DLL.
+- Added a manual Azure OIDC signing workflow with required configuration checks.
+- Added a directory-package build mode so all binaries can be signed individually.
+- No installed signing certificate was found. The released app remains unsigned pending a real signing identity.
+
 ## Iteration 6 · v0.3.1 visual polish
 
 - Reduced card padding and chart whitespace so the full legend fits the standard layout.

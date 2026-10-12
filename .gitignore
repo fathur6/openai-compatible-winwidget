@@ -5,3 +5,7 @@ artifacts/
 *.user
 *.auth.json
 *.secrets.json
+*.pfx
+*.p12
+*.key
+*.pem
