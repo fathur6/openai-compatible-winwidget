@@ -1,5 +1,10 @@
 # Changelog
 
+## Iteration 9 · Signing application submitted
+
+- Submitted the SignPath Foundation application with the maintainer's authorization; the application form confirmed success on 12 October 2026.
+- Foundation approval, account configuration and production signing remain pending. Current downloads remain unsigned.
+
 ## Iteration 8 · Open-source signing application preparation
 
 - Added the MIT licence with the maintainer's authorization.

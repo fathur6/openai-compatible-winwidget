@@ -8,7 +8,7 @@ Authenticode signing identifies the publisher and protects file integrity. It do
 
 ## Selected route: SignPath Foundation
 
-The maintainer authorized MIT licensing and a free SignPath Foundation application. The application is being prepared; approval is not guaranteed, especially for a new project. See the [public signing policy](code-signing-policy.md) and [privacy policy](privacy.md).
+The maintainer authorized MIT licensing and a free SignPath Foundation application. The application was submitted on 12 October 2026 and the form confirmed success. Approval is pending and is not guaranteed, especially for a new project. See the [public signing policy](code-signing-policy.md) and [privacy policy](privacy.md).
 
 The current 0.4.0 source replaces redistributed SQLite dependencies with Windows' `winsqlite3.dll`, loaded only from System32. Existing `history.db` files use the same schema. A clean directory build contains three unsigned project files; all other packaged binaries retain their Microsoft signatures.
 

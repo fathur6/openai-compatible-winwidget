@@ -4,7 +4,7 @@ Download published builds from [GitHub Releases](https://github.com/fathur6/open
 
 ## Status
 
-Current downloads are unsigned. We are preparing an application to the SignPath Foundation's free open-source programme. Acceptance and signing are pending; no SignPath certificate or signed release is available yet.
+Current downloads are unsigned. The application to the SignPath Foundation's free open-source programme was submitted on 12 October 2026; its form confirmed successful submission. Acceptance and signing are pending; no SignPath certificate or signed release is available yet.
 
 After approval, code signing is planned to be provided by [SignPath.io](https://signpath.io), with a certificate issued by the [SignPath Foundation](https://signpath.org). This is a planned arrangement, not a claim that current downloads are signed.
 
