@@ -38,7 +38,7 @@ public sealed partial class WidgetWindow : Window
         preferences = demo ? new() : store.LoadPreferences();
         snapshot = demo ? Snapshot.Demo : store.LoadCache();
         try { if (!demo) history = new HistoryStore(store.Root); }
-        catch (Exception e) when (e is Microsoft.Data.Sqlite.SqliteException or IOException or UnauthorizedAccessException) { status.Text = "History storage unavailable."; }
+        catch (Exception e) when (e is SqliteStoreException or IOException or UnauthorizedAccessException or DllNotFoundException or EntryPointNotFoundException) { status.Text = "History storage unavailable."; }
         LoadHistory();
         statePath = Path.Combine(Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData), "WinWidget", "window.json");
         Title = "AI Usage · WinWidget";
@@ -206,12 +206,12 @@ public sealed partial class WidgetWindow : Window
             historyPoints = samples; return;
         }
         try { historyPoints = history?.Read(chartEnd) ?? Array.Empty<HistoryPoint>(); }
-        catch (Exception e) when (e is Microsoft.Data.Sqlite.SqliteException or IOException) { historyPoints = Array.Empty<HistoryPoint>(); status.Text = "History could not be read."; }
+        catch (Exception e) when (e is SqliteStoreException or IOException) { historyPoints = Array.Empty<HistoryPoint>(); status.Text = "History could not be read."; }
     }
     private bool SaveHistory()
     {
         if (history == null) return false;
         try { history.Save(snapshot, DateTimeOffset.UtcNow); LoadHistory(); return true; }
-        catch (Exception e) when (e is Microsoft.Data.Sqlite.SqliteException or IOException) { return false; }
+        catch (Exception e) when (e is SqliteStoreException or IOException) { return false; }
     }
 }

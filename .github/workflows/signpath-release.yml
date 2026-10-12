@@ -1,0 +1,66 @@
+name: SignPath Windows package
+on:
+  workflow_dispatch:
+permissions:
+  contents: read
+  actions: read
+jobs:
+  sign:
+    if: github.ref == 'refs/heads/main'
+    runs-on: windows-latest
+    environment: signpath
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - name: Require approved signing configuration
+        shell: pwsh
+        env:
+          ORGANIZATION: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          PROJECT: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          POLICY: ${{ vars.SIGNPATH_SIGNING_POLICY_SLUG }}
+          TOKEN: ${{ secrets.SIGNPATH_API_TOKEN }}
+        run: |
+          foreach ($name in 'ORGANIZATION','PROJECT','POLICY','TOKEN') {
+            if (![Environment]::GetEnvironmentVariable($name)) { throw "Missing SignPath configuration: $name" }
+          }
+      - uses: actions/setup-dotnet@v4
+        with:
+          dotnet-version: '10.0.x'
+      - name: Build and check signing candidate
+        shell: pwsh
+        run: |
+          ./scripts/build.ps1 -DirectoryBundle -SkipPackage
+          $ownFiles = @('WinWidget.exe','WinWidget.dll','WinWidget.Core.dll')
+          foreach ($file in Get-ChildItem artifacts/win-x64-signing -Recurse -File | Where-Object { $_.Extension -in '.exe','.dll' }) {
+            if ($file.Name -in $ownFiles) { continue }
+            $signature = Get-AuthenticodeSignature $file.FullName
+            if ($signature.Status -ne 'Valid' -or !$signature.TimeStamperCertificate) { throw "Unsigned or untimestamped upstream binary: $($file.Name)" }
+          }
+      - name: Upload candidate for verified build provenance
+        id: candidate
+        uses: actions/upload-artifact@v4
+        with:
+          name: WinWidget-signing-candidate
+          path: artifacts/win-x64-signing/*
+          if-no-files-found: error
+      - name: Request approved production signature
+        uses: signpath/github-action-submit-signing-request@v3
+        with:
+          api-token: ${{ secrets.SIGNPATH_API_TOKEN }}
+          organization-id: ${{ vars.SIGNPATH_ORGANIZATION_ID }}
+          project-slug: ${{ vars.SIGNPATH_PROJECT_SLUG }}
+          signing-policy-slug: ${{ vars.SIGNPATH_SIGNING_POLICY_SLUG }}
+          github-artifact-id: ${{ steps.candidate.outputs.artifact-id }}
+          wait-for-completion: true
+          wait-for-completion-timeout-in-seconds: 1200
+          output-artifact-directory: artifacts/signpath-signed
+      - name: Verify every binary and package
+        shell: pwsh
+        run: |
+          ./scripts/verify-signatures.ps1 -PublishDirectory artifacts/signpath-signed
+          Compress-Archive -Path artifacts/signpath-signed/* -DestinationPath artifacts/WinWidget-win-x64-signed.zip -Force
+      - uses: actions/upload-artifact@v4
+        with:
+          name: WinWidget-SignPath-signed-x64
+          path: artifacts/WinWidget-win-x64-signed.zip
+          if-no-files-found: error

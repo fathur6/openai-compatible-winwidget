@@ -25,7 +25,7 @@ using (var json = JsonDocument.Parse("""{"available_amount":"NaN"}"""))
     bool rejected = false; try { ProviderClient.ParseBalance("minimax", json.RootElement); } catch (JsonException) { rejected = true; }
     Check(rejected, "Non-finite balance must be rejected");
 }
-var root = Path.Combine(Path.GetTempPath(), "WinWidgetTests-" + Guid.NewGuid());
+var root = Path.Combine(Path.GetTempPath(), "WinWidgetTests-历史-" + Guid.NewGuid());
 Directory.CreateDirectory(root);
 try
 {
@@ -56,10 +56,23 @@ try
     history.Save(new(new(new(99, now.AddMonths(-13)), null), new(null, null), new(null, null, null)), now.AddMonths(-13));
     history.Save(Snapshot.Empty, now);
     Check(history.Read(now, 10000).All(p => p.Hour > now.AddMonths(-12)), "Ledger prunes records older than 12 months");
+    var originalCulture = System.Globalization.CultureInfo.CurrentCulture;
+    try
+    {
+        System.Globalization.CultureInfo.CurrentCulture = System.Globalization.CultureInfo.GetCultureInfo("fr-FR");
+        history.Save(new(new(new(12.3456789, now), null), new(null, null), new(null, null, null)), now);
+        Check(new HistoryStore(root).Read(now).Single().DeepSeek == 12.3456789, "Ledger persists fractional values independently of Windows culture and Unicode path");
+    }
+    finally { System.Globalization.CultureInfo.CurrentCulture = originalCulture; }
+    var corruptRoot = Path.Combine(root, "corrupt");
+    Directory.CreateDirectory(corruptRoot);
+    File.WriteAllText(Path.Combine(corruptRoot, "history.db"), "not a database");
+    bool corruptRejected = false;
+    try { _ = new HistoryStore(corruptRoot); } catch (SqliteStoreException) { corruptRejected = true; }
+    Check(corruptRejected, "Corrupt ledger must report a recoverable storage error");
 }
 finally
 {
-    Microsoft.Data.Sqlite.SqliteConnection.ClearAllPools();
     Directory.Delete(root, true);
 }
 Console.WriteLine($"Passed {checks} behavior checks.");

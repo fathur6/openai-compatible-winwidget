@@ -1,5 +1,13 @@
 # Changelog
 
+## Iteration 8 · Open-source signing application preparation
+
+- Added the MIT licence with the maintainer's authorization.
+- Replaced redistributed SQLite dependencies with a narrow adapter to Windows' System32 SQLite; existing history schema is preserved.
+- Added checks for fractional values under non-English culture, Unicode paths and corrupt databases.
+- Added a manual SignPath workflow, public privacy policy and code signing policy. Configuration and Foundation approval remain pending.
+- Publish folders are cleaned before builds to prevent removed dependencies entering packages; bundles now include the licence.
+
 ## Iteration 7 · Trusted signing preparation
 
 - Added CA-issued local certificate signing and timestamp/signature verification for every EXE/DLL.

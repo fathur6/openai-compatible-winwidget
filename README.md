@@ -46,7 +46,7 @@ The initial release is unsigned. Windows Application Control intermittently bloc
 
 ## Scope and provider endpoints
 
-Trusted signing scripts and a manual GitHub signing workflow are documented in [docs/signing.md](docs/signing.md). They require an identity-verified signing credential. The current download remains unsigned until a real signed package is produced and verified.
+We are pursuing the SignPath Foundation's free open-source signing programme. Approval and signatures are pending. See the [code signing policy and downloads](docs/code-signing-policy.md), [signing setup](docs/signing.md) and [privacy policy](docs/privacy.md). The current download remains unsigned until a real signed package is produced and verified.
 
 This is an independent Windows implementation inspired by the Mac app; Swift source is not copied. It uses DeepSeek `/user/balance`, MiniMax's internal `/account/query_balance`, and ChatGPT's internal `/backend-api/wham/usage`. Internal endpoints can change without notice. A malformed response produces an error rather than a fabricated balance. Quota windows are identified by their duration (18,000 or 604,800 seconds), never their payload order.
 
@@ -59,3 +59,5 @@ The current provider integrations are DeepSeek, MiniMax and Codex subscription q
 3. History and distribution: SQLite history, charts, verification and portable Windows build.
 
 See [CHANGELOG.md](CHANGELOG.md) for completed stages.
+
+Licensed under [MIT](LICENSE). The current source uses Windows' System32 SQLite library for local history; it does not redistribute an unsigned SQLite dependency.
