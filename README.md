@@ -10,6 +10,8 @@ Built with C# and WPF on .NET 10. Development is recorded as successive commits 
 
 Get the Windows x64 ZIP from [Releases](https://github.com/fathur6/openai-compatible-winwidget/releases), extract it, and open **WinWidget.exe**. The portable package includes .NET. Windows 11 x64 is the primary target; compatible Windows 10 LTSC/Enterprise editions may also work but have not been tested.
 
+To install an extracted package for your Windows account with desktop and Start menu shortcuts, run `./scripts/install.ps1 -PackageDirectory 'C:\path\to\extracted-package' -Launch` from this repository. It installs under `%LOCALAPPDATA%\Programs\OpenAI Compatible WinWidget`, requires no administrator rights and does not enable automatic startup. Windows may block the current unsigned build while SignPath approval is pending.
+
 Drag the title to move the widget. **Pinned** keeps it above other windows. **Hide** sends it to the tray; double-click the tray icon to restore it, or right-click for Show, Settings and Quit. Position and pin preference survive restarts. Startup is manual in this release.
 
 On shorter displays the content scrolls so the footer controls remain available. The release preview captures the standard 748-pixel layout using sample values.

@@ -1,5 +1,11 @@
 # Changelog
 
+## Iteration 10 · Per-user Windows installation
+
+- Added a per-user installer that copies an extracted package and creates Desktop and Start menu shortcuts.
+- Optional launch uses the normal Windows executable path; installation does not modify security policy or enable automatic startup.
+- Installed 0.4.0 locally and verified shortcuts. Launch was blocked by Windows Code Integrity because WinWidget.dll is unsigned; a signed release remains necessary on the development PC.
+
 ## Iteration 9 · Signing application submitted
 
 - Submitted the SignPath Foundation application with the maintainer's authorization; the application form confirmed success on 12 October 2026.
